@@ -152,7 +152,17 @@ Value::operator kdl_value() const
     return result;
 }
 
-Document Document::read_from(kdl_parser* parser)
+    static size_t get_line(const std::u8string_view& source, char const* pos)
+{
+    size_t line = 1;
+    const auto limit = source.data() + source.length();
+    for (char8_t const* p = source.data(); p < (char8_t const*)pos && p < limit; ++p) {
+        if (*p == '\n') ++line;
+    }
+    return line;
+}
+
+Document Document::read_from(kdl_parser* parser, const std::u8string_view& kdl_text)
 {
     Document doc;
     auto* node_list = &doc.nodes();
@@ -166,7 +176,10 @@ Document Document::read_from(kdl_parser* parser)
         case KDL_EVENT_EOF:
             return doc;
         case KDL_EVENT_PARSE_ERROR:
-            throw ParseError(ev->value.string);
+            {
+                size_t line = get_line(kdl_text, ev->value.string.data);
+                throw ParseError(std::string(ev->value.string.data, ev->value.string.len) + " at line " + std::to_string(line));
+            }
         case KDL_EVENT_START_NODE: {
             auto name = to_u8string_view(ev->name);
             if (ev->value.type_annotation.data != nullptr) {
@@ -218,9 +231,9 @@ std::u8string Document::to_string(KdlVersion version) const
     return result;
 }
 
-Document parse(std::u8string_view kdl_text) { return parse(kdl_text, KdlVersion::Any); }
+Document parse(const std::u8string_view & kdl_text) { return parse(kdl_text, KdlVersion::Any); }
 
-Document parse(std::u8string_view kdl_text, KdlVersion version)
+Document parse(const std::u8string_view & kdl_text, KdlVersion version)
 {
     kdl_parse_option opts = KDL_DEFAULTS;
     if (version == KdlVersion::Kdl_1) opts = KDL_READ_VERSION_1;
@@ -236,7 +249,7 @@ Document parse(std::u8string_view kdl_text, KdlVersion version)
     kdl_str text = {reinterpret_cast<char const*>(kdl_text.data()), kdl_text.size()};
     kdl_parser* parser = kdl_create_string_parser(text, opts);
     if (parser == nullptr) throw std::runtime_error("Error initializing the KDL parser");
-    auto doc = Document::read_from(parser);
+    auto doc = Document::read_from(parser, kdl_text);
     kdl_destroy_parser(parser);
     return doc;
 }

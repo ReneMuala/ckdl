@@ -57,6 +57,7 @@ class KDLPP_EXPORT ParseError : public std::exception {
 public:
     ParseError(kdl_str const& msg);
     ParseError(std::string msg) : m_msg{std::move(msg)} {}
+
     const char* what() const noexcept { return m_msg.c_str(); }
 };
 
@@ -332,7 +333,7 @@ class KDLPP_EXPORT Document {
     std::vector<Node> m_nodes;
 
 public:
-    static Document read_from(kdl_parser* parser);
+    static Document read_from(kdl_parser* parser, const std::u8string_view& kdl_text);
 
     Document() = default;
     Document(Document const&) = default;
@@ -356,8 +357,8 @@ public:
 };
 
 // Load a KDL document from string
-KDLPP_EXPORT Document parse(std::u8string_view kdl_text);
-KDLPP_EXPORT Document parse(std::u8string_view kdl_text, KdlVersion version);
+KDLPP_EXPORT Document parse(const std::u8string_view & kdl_text);
+KDLPP_EXPORT Document parse(const std::u8string_view & kdl_text, KdlVersion version);
 
 } // namespace kdl
 

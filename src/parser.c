@@ -175,6 +175,7 @@ static bool _parse_binary_number(kdl_str number, kdl_value* val, kdl_owned_strin
 static bool _identifier_is_valid_v1(kdl_str value);
 static bool _identifier_is_valid_v2(kdl_str value);
 
+
 kdl_event_data* kdl_parser_next_event(kdl_parser* self)
 {
     kdl_token token;
@@ -217,7 +218,7 @@ kdl_event_data* kdl_parser_next_event(kdl_parser* self)
                 break;
             default:
             case KDL_TOKENIZER_ERROR:
-                _set_parse_error(self, "Parse error");
+                _set_parse_error(self, "Invalid token");
                 return &self->event;
             }
         }
