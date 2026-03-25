@@ -1,6 +1,6 @@
 #include <kdl/kdl.h>
 #include <kdlpp.h>
-
+#include <fmt/core.h>
 namespace kdl {
 
 // internal helper functions
@@ -168,7 +168,7 @@ Document Document::read_from(kdl_parser* parser, const std::u8string_view& kdl_t
     auto* node_list = &doc.nodes();
     Node* current_node = nullptr;
     std::vector<Node*> stack;
-
+    std::string comments;
     while (true) {
         auto* ev = kdl_parser_next_event(parser);
 
@@ -190,6 +190,7 @@ Document Document::read_from(kdl_parser* parser, const std::u8string_view& kdl_t
             }
             node_list = &current_node->children();
             stack.push_back(current_node);
+                current_node->set_comments(std::move(comments));
             break;
         }
         case KDL_EVENT_END_NODE:
@@ -204,6 +205,9 @@ Document Document::read_from(kdl_parser* parser, const std::u8string_view& kdl_t
             break;
         case KDL_EVENT_ARGUMENT:
             current_node->args().emplace_back(Value{ev->value});
+            break;
+        case KDL_EVENT_COMMENT:
+            comments = std::string(ev->value.string.data, ev->value.string.len);
             break;
         case KDL_EVENT_PROPERTY:
             current_node->properties()[std::u8string{to_u8string_view(ev->name)}] = Value{ev->value};
@@ -247,7 +251,7 @@ Document parse(const std::u8string_view & kdl_text, KdlVersion version)
     }
 
     kdl_str text = {reinterpret_cast<char const*>(kdl_text.data()), kdl_text.size()};
-    kdl_parser* parser = kdl_create_string_parser(text, opts);
+    kdl_parser* parser = kdl_create_string_parser(text, static_cast<kdl_parse_option>(opts | KDL_EMIT_COMMENTS));
     if (parser == nullptr) throw std::runtime_error("Error initializing the KDL parser");
     auto doc = Document::read_from(parser, kdl_text);
     kdl_destroy_parser(parser);

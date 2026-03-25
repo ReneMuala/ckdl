@@ -24,6 +24,7 @@
 #include <type_traits>
 #include <variant>
 #include <vector>
+#include <regex>
 
 // forward-declare the types used from the C headers as not to pollute the global namespace
 typedef struct kdl_str kdl_str;
@@ -280,6 +281,7 @@ class Node : public HasTypeAnnotation {
     std::vector<Value> m_args;
     std::map<std::u8string, Value, std::less<>> m_properties;
     std::vector<Node> m_children;
+    std::string m_comments{};
 
 public:
     Node() = default;
@@ -318,7 +320,14 @@ public:
     Node& operator=(Node&&) = default;
 
     std::u8string const& name() const { return m_name; }
+    std::string const& comments() const { return m_comments; }
     void set_name(std::u8string_view name) { m_name = std::u8string{name}; }
+    void set_comments(std::string&& comments)
+    {
+        m_comments = std::move(comments);
+        const auto r = std::regex{R"((^//\s*)|(^/\*\s*)|(\s*\*/$))"};
+        m_comments = std::regex_replace(m_comments, r, "");
+    }
 
     const std::vector<Value>& args() const { return m_args; }
     std::vector<Value>& args() { return m_args; }
