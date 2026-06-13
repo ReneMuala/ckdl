@@ -661,14 +661,14 @@ static kdl_event_data* _next_event_in_node(kdl_parser* self, kdl_token* token)
 
             // This is an argument or a property value.
             // KDLv1 bans bare identifiers in this position
-            if (token->type == KDL_TOKEN_WORD && self->event.value.type == KDL_TYPE_STRING) {
+            /*if (token->type == KDL_TOKEN_WORD && self->event.value.type == KDL_TYPE_STRING) {
                 if (_v1_only(self)) {
                     _set_parse_error(self, "Bare identifier not allowed here");
                     return &self->event;
                 } else {
                     _set_version(self, KDL_VERSION_2);
                 }
-            }
+            }*/
 
             // We can return the event
             if (self->waiting_type_annotation.data != NULL) {
