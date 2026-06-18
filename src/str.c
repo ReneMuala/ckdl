@@ -19,11 +19,12 @@
 KDL_EXPORT extern inline kdl_str kdl_borrow_str(kdl_owned_string const* str);
 
 kdl_str kdl_str_from_cstr(char const* s) { return (kdl_str){s, strlen(s)}; }
-
+    void *tracked_malloc(size_t size); // fixes leaked memory issues
+    bool tracked_free(void * ptr);
 kdl_owned_string kdl_clone_str(kdl_str const* s)
 {
     kdl_owned_string result;
-    result.data = malloc(s->len + 1);
+    result.data = tracked_malloc(s->len + 1);
     if (result.data != NULL) {
         memcpy(result.data, s->data, s->len);
         result.data[s->len] = '\0';
@@ -37,7 +38,9 @@ kdl_owned_string kdl_clone_str(kdl_str const* s)
 void kdl_free_string(kdl_owned_string* s)
 {
     if (s->data != NULL) {
-        free(s->data);
+        if(!tracked_free(s->data)){
+            free(s->data);
+        }
         s->data = NULL;
     }
     s->len = 0;

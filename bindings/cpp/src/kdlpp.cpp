@@ -253,9 +253,14 @@ Document parse(const std::u8string_view & kdl_text, KdlVersion version)
     kdl_str text = {reinterpret_cast<char const*>(kdl_text.data()), kdl_text.size()};
     kdl_parser* parser = kdl_create_string_parser(text, static_cast<kdl_parse_option>(opts | KDL_EMIT_COMMENTS));
     if (parser == nullptr) throw std::runtime_error("Error initializing the KDL parser");
-    auto doc = Document::read_from(parser, kdl_text);
-    kdl_destroy_parser(parser);
-    return doc;
+    try {
+        auto doc = Document::read_from(parser, kdl_text);
+        kdl_destroy_parser(parser);
+        return doc;
+    } catch(ParseError &e){
+        kdl_destroy_parser(parser);
+        throw e;
+    }
 }
 
 } // namespace kdl
