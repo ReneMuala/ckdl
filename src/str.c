@@ -21,6 +21,7 @@ KDL_EXPORT extern inline kdl_str kdl_borrow_str(kdl_owned_string const* str);
 kdl_str kdl_str_from_cstr(char const* s) { return (kdl_str){s, strlen(s)}; }
     void *tracked_malloc(size_t size); // fixes leaked memory issues
     bool tracked_free(void * ptr);
+    void *tracked_reallocf(void *ptr, size_t size);
 kdl_owned_string kdl_clone_str(kdl_str const* s)
 {
     kdl_owned_string result;
@@ -53,7 +54,7 @@ _kdl_write_buffer _kdl_new_write_buffer(size_t initial_size)
 
 void _kdl_free_write_buffer(_kdl_write_buffer* buf)
 {
-    free(buf->buf);
+    tracked_free(buf->buf);
     buf->buf = NULL;
     buf->buf_len = 0;
     buf->str_len = 0;
@@ -64,7 +65,7 @@ bool _kdl_buf_push_chars(_kdl_write_buffer* buf, char const* s, size_t count)
     if (buf->buf_len - buf->str_len < count) {
         size_t increment = BUFFER_SIZE_INCREMENT >= count ? BUFFER_SIZE_INCREMENT : count;
         buf->buf_len += increment;
-        buf->buf = reallocf(buf->buf, buf->buf_len);
+        buf->buf = tracked_reallocf(buf->buf, buf->buf_len);
         if (buf->buf == NULL) {
             return false;
         }
@@ -82,7 +83,7 @@ bool _kdl_buf_push_codepoint(_kdl_write_buffer* buf, uint32_t c)
     if (buf->buf_len - buf->str_len < 4) {
         size_t increment = BUFFER_SIZE_INCREMENT >= 4 ? BUFFER_SIZE_INCREMENT : 4;
         buf->buf_len += increment;
-        buf->buf = reallocf(buf->buf, buf->buf_len);
+        buf->buf = tracked_reallocf(buf->buf, buf->buf_len);
         if (buf->buf == NULL) {
             return false;
         }
@@ -98,7 +99,7 @@ bool _kdl_buf_push_codepoint(_kdl_write_buffer* buf, uint32_t c)
 
 kdl_owned_string _kdl_buf_to_string(_kdl_write_buffer* buf)
 {
-    kdl_owned_string s = {reallocf(buf->buf, buf->str_len + 1), buf->str_len};
+    kdl_owned_string s = {tracked_reallocf(buf->buf, buf->str_len + 1), buf->str_len};
     if (s.data == NULL) s.len = 0;
     buf->buf = NULL;
     buf->buf_len = 0;
